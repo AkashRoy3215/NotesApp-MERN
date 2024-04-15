@@ -1,4 +1,5 @@
 import React from "react";
+import { useEffect } from "react";
 import { useState } from "react";
 import "./App.css";
 function App() {
@@ -23,6 +24,20 @@ function App() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedNote, setSelectedNote] = useState(null);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const responseData = await fetch("http://localhost:8000/api/notes");
+        const notes = responseData.data.notes;
+        setNotes(notes);
+        // console.log(notes);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    fetchNotes();
+  }, []);
 
   const handleAddNote = (e) => {
     e.preventDefault();
