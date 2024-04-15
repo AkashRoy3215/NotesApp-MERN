@@ -41,8 +41,30 @@ exports.deleteNote = async (req, res) => {
       return res.status(404).json({ message: "Note not found" });
     }
 
-    await note.remove();
-    res.json({ message: "Note deleted successfully" });
+    await note.deleteOne();
+    res.status(500).json({ message: "Note Deleted Succesfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateNote = async (req, res) => {
+  const { title, content } = req.body;
+  if (!title || !content) {
+    return res.status(400).json({ message: "Title and content are required" });
+  }
+
+  try {
+    const note = await Note.findById(req.params.id);
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+
+    note.title = title;
+    note.content = content;
+
+    const updatedNote = await note.save();
+    res.json(updatedNote);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
