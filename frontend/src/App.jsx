@@ -3,23 +3,7 @@ import { useEffect } from "react";
 import { useState } from "react";
 import "./App.css";
 function App() {
-  const [notes, setNotes] = useState([
-    {
-      id: 1,
-      title: "note title 1",
-      content: "content",
-    },
-    {
-      id: 2,
-      title: "note title 2",
-      content: "content",
-    },
-    {
-      id: 3,
-      title: "note title 3",
-      content: "content",
-    },
-  ]);
+  const [notes, setNotes] = useState([]);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -28,10 +12,11 @@ function App() {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const responseData = await fetch("http://localhost:8000/api/notes");
-        const notes = responseData.data.notes;
+        const response = await fetch("http://localhost:8000/api/notes");
+        const responseData = await response.json();
+        const notes = responseData.data.notes; // Accessing the notes array from the data object
         setNotes(notes);
-        // console.log(notes);
+        console.log(notes);
       } catch (e) {
         console.log(e);
       }
@@ -39,20 +24,31 @@ function App() {
     fetchNotes();
   }, []);
 
-  const handleAddNote = (e) => {
+  const handleAddNote = async (e) => {
     e.preventDefault();
-    console.log("title", title);
-    console.log("content", content);
 
-    const newNote = {
-      id: notes.length + 1,
-      title: title,
-      content: content,
-    };
+    try {
+      const response = await fetch("http://localhost:8000/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", //Don't know what it does.
+        },
+        body: JSON.stringify({
+          id,
+          title,
+          content,
+        }),
+      });
+      const responseData = await response.json();
 
-    setNotes([newNote, ...notes]);
-    setTitle("");
-    setContent("");
+      const newNote = responseData.data.notes;
+
+      setNotes([newNote, ...notes]);
+      setTitle("");
+      setContent("");
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const handleNoteClick = (note) => {
@@ -62,24 +58,45 @@ function App() {
     setSelectedNote(note);
   };
 
-  const handleUppdateNote = (e) => {
+  const handleUpdateNote = async (e) => {
     e.preventDefault();
-    if (!selectedNote) {
-      return;
-    }
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/notes/${selectedNote.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: selectedNote.id,
+            title,
+            content,
+          }),
+        }
+      );
 
-    const updateNote = {
-      id: selectedNote.id,
-      title: title,
-      content: content,
-    };
-    const updatedNotesList = notes.map((note) =>
-      note.id === selectedNote.id ? updateNote : note
-    );
-    setNotes(updatedNotesList);
-    setTitle("");
-    setContent("");
-    setSelectedNote(null);
+      if (!response.ok) {
+        throw new Error("Failed to update note");
+      }
+
+      const updateNote = {
+        id: selectedNote.id,
+        title: title,
+        content: content,
+      };
+
+      // Update the note in the notes array
+      const updatedNotesList = notes.map((note) =>
+        note.id === selectedNote.id ? updateNote : note
+      );
+      setNotes(updatedNotesList);
+      setTitle("");
+      setContent("");
+      setSelectedNote(null);
+    } catch (error) {
+      console.error("Error updating note:", error);
+    }
   };
 
   const handleCancel = () => {
@@ -88,11 +105,30 @@ function App() {
     setSelectedNote(null);
   };
 
-  const deleteNote = (e, noteId) => {
-    e.stopPropagation();
+  const deleteNote = async () => {
+    // e.stopPropagation();
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/notes/${selectedNote.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
-    const updatedNotes = notes.filter((note) => note.id !== noteId);
-    setNotes(updatedNotes);
+      if (!response.ok) {
+        throw new Error("Failed to delete note");
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+    // Remove the deleted note from the notes array
+    const updatedNotesList = notes.filter(
+      (note) => note.id !== selectedNote.id
+    );
+    setNotes(updatedNotesList);
+    setTitle("");
+    setContent("");
+    setSelectedNote(null);
   };
 
   return (
@@ -100,7 +136,7 @@ function App() {
       <form
         className="note-form"
         onSubmit={(e) =>
-          selectedNote ? handleUppdateNote(e) : handleAddNote(e)
+          selectedNote ? handleUpdateNote(e) : handleAddNote(e)
         }
       >
         <input
@@ -139,7 +175,7 @@ function App() {
             onClick={() => handleNoteClick(note)}
           >
             <div className="notes-header">
-              <button onClick={(e) => deleteNote(e, note.id)}>x</button>
+              <button onClick={() => deleteNote(note.id)}>x</button>
             </div>
             <h2>{note.title}</h2>
             <p>{note.content}</p>
