@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import axios from "axios";
 
 function App() {
   const [notes, setNotes] = useState([]);
@@ -11,11 +12,14 @@ function App() {
     fetchNotes();
   }, []);
 
+  const api = axios.create({
+    baseURL: "https://notesapp-mern-lmqp.onrender.com",
+  });
+
   const fetchNotes = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/notes");
-      const responseData = await response.json();
-      setNotes(responseData.data.notes);
+      const response = await api.get("/api/notes");
+      setNotes(response.data.data.notes);
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
@@ -23,25 +27,18 @@ function App() {
 
   const handleAddNote = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch("http://localhost:8000/api/notes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          content,
-        }),
+      const response = await api.post("/api/notes", {
+        title,
+        content,
       });
-      const responseData = await response.json();
-      // console.log(responseData);
-      if (response.ok) {
-        setNotes([...notes, responseData]);
+      if (response.status === 200) {
+        setNotes([...notes, response.data]);
         setTitle("");
         setContent("");
       } else {
-        throw new Error(responseData.error || "Failed to add note");
+        throw new Error(response.data.error || "Failed to add note");
       }
     } catch (error) {
       console.error("Error adding note:", error.message);
@@ -50,31 +47,24 @@ function App() {
 
   const handleUpdateNote = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch(
-        `http://localhost:8000/api/notes/${selectedNote._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title,
-            content,
-          }),
-        }
-      );
-      if (!response.ok) {
+      const response = await api.put(`/api/notes/${selectedNote._id}`, {
+        title,
+        content,
+      });
+      if (response.status === 200) {
+        const updatedNote = { ...selectedNote, title, content };
+        const updatedNotes = notes.map((note) =>
+          note._id === updatedNote._id ? updatedNote : note
+        );
+        setNotes(updatedNotes);
+        setTitle("");
+        setContent("");
+        setSelectedNote(null);
+      } else {
         throw new Error("Failed to update note");
       }
-      const updatedNote = { ...selectedNote, title, content };
-      const updatedNotes = notes.map((note) =>
-        note._id === updatedNote._id ? updatedNote : note
-      );
-      setNotes(updatedNotes);
-      setTitle("");
-      setContent("");
-      setSelectedNote(null);
     } catch (error) {
       console.error("Error updating note:", error);
     }
@@ -82,16 +72,15 @@ function App() {
 
   const deleteNote = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/notes/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
+      const response = await api.delete(`/api/notes/${id}`);
+      if (response.status === 200) {
+        setNotes(notes.filter((note) => note._id !== id));
+        setTitle("");
+        setContent("");
+        setSelectedNote(null);
+      } else {
         throw new Error("Failed to delete note");
       }
-      setNotes(notes.filter((note) => note._id !== id));
-      setTitle("");
-      setContent("");
-      setSelectedNote(null);
     } catch (error) {
       console.error("Error deleting note:", error);
     }
