@@ -18,7 +18,9 @@ function App() {
 
   const fetchNotes = async () => {
     try {
-      const response = await api.get("/api/notes");
+      const response = await api.get(
+        "https://notesapp-mern-lmqp.onrender.com/api/notes"
+      );
       setNotes(response.data.data.notes);
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -29,11 +31,15 @@ function App() {
     e.preventDefault();
 
     try {
-      const response = await api.post("/api/notes", {
-        title,
-        content,
-      });
-      if (response.status === 200) {
+      const response = await api.post(
+        "https://notesapp-mern-lmqp.onrender.com/api/notes",
+        {
+          title,
+          content,
+        }
+      );
+      console.log("Response from adding note:", response);
+      if (response.status === 200 || 201) {
         setNotes([...notes, response.data]);
         setTitle("");
         setContent("");
@@ -49,11 +55,14 @@ function App() {
     e.preventDefault();
 
     try {
-      const response = await api.put(`/api/notes/${selectedNote._id}`, {
-        title,
-        content,
-      });
-      if (response.status === 200) {
+      const response = await api.put(
+        `https://notesapp-mern-lmqp.onrender.com/api/notes/${selectedNote._id}`,
+        {
+          title,
+          content,
+        }
+      );
+      if (response.status === 200 || 201) {
         const updatedNote = { ...selectedNote, title, content };
         const updatedNotes = notes.map((note) =>
           note._id === updatedNote._id ? updatedNote : note
@@ -72,8 +81,10 @@ function App() {
 
   const deleteNote = async (id) => {
     try {
-      const response = await api.delete(`/api/notes/${id}`);
-      if (response.status === 200) {
+      const response = await api.delete(
+        `https://notesapp-mern-lmqp.onrender.com/api/notes/${id}`
+      );
+      if (response.status === 200 || 201) {
         setNotes(notes.filter((note) => note._id !== id));
         setTitle("");
         setContent("");
