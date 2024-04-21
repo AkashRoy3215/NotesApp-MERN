@@ -1,4 +1,7 @@
 MERN Stack Notes App
+
+
+
 This is a simple notes app built using the MERN (MongoDB, Express.js, React.js, Node.js) stack. It allows users to add, update, and delete notes.
 
 Features
